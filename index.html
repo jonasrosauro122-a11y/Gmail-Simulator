@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gmail VA Email Accuracy Simulator</title>
+  <style>
+    :root{
+      --bg:#f6f8fc;
+      --panel:#ffffff;
+      --side:#f8fafd;
+      --border:#e0e3e7;
+      --border-soft:#edf1f5;
+      --text:#202124;
+      --muted:#5f6368;
+      --blue:#1a73e8;
+      --blue-dark:#0b57d0;
+      --blue-soft:#d3e3fd;
+      --compose:#c2e7ff;
+      --green:#188038;
+      --yellow:#fbbc04;
+      --red:#d93025;
+      --purple:#7e57c2;
+      --shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);
+      --soft-shadow:0 8px 32px rgba(60,64,67,.24);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      overflow:hidden;
+    }
+
+    button,input,textarea,select{
+      font-family:inherit;
+    }
+
+    button{
+      cursor:pointer;
+      border:none;
+      background:none;
+      color:inherit;
+    }
+
+    .app{
+      height:100vh;
+      display:flex;
+      overflow:hidden;
+    }
+
+    .sidebar{
+      width:255px;
+      flex:0 0 255px;
+      background:var(--side);
+      border-right:1px solid var(--border);
+      display:flex;
+      flex-direction:column;
+    }
+
+    .brand-row{
+      height:64px;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:0 22px;
+    }
+
+    .icon-btn{
+      width:40px;
+      height:40px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      color:var(--muted);
+      transition:.16s ease;
+    }
+
+    .icon-btn:hover{
+      background:#e9eef6;
+    }
+
+    .hamburger{
+      width:20px;
+      height:14px;
+      position:relative;
+    }
+
+    .hamburger span,
+    .hamburger:before,
+    .hamburger:after{
+      content:"";
+      position:absolute;
+      left:0;
+      width:20px;
+      height:2px;
+      background:#5f6368;
+      border-radius:2px;
+    }
+    .hamburger span{top:6px}
+    .hamburger:before{top:0}
+    .hamburger:after{bottom:0}
+
+    .gmail-logo{
+      width:34px;height:26px;
+      position:relative;
+      display:inline-block;
+    }
+    .gmail-logo:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(135deg, transparent 0 25%, #ea4335 25% 38%, transparent 38%),
+        linear-gradient(45deg, transparent 0 25%, #4285f4 25% 38%, transparent 38%),
+        linear-gradient(135deg, #fbbc04 0 17%, transparent 17%),
+        linear-gradient(45deg, #34a853 0 17%, transparent 17%);
+      border-radius:3px;
+    }
+    .gmail-logo:after{
+      content:"M";
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      color:#ea4335;
+      font-weight:900;
+      font-size:22px;
+      line-height:1;
+    }
+
+    .brand-text{
+      font-size:29px;
+      color:#5f6368;
+      letter-spacing:-1px;
+    }
+
+    .compose-wrap{
+      padding:8px 0 14px 7px;
+    }
+
+    .compose-btn{
+      height:56px;
+      min-width:142px;
+      border-radius:17px;
+      background:var(--compose);
+      color:#001d35;
+      box-shadow:var(--shadow);
+      display:flex;
+      align-items:center;
+      gap:13px;
+      padding:0 22px;
+      font-size:15px;
+      font-weight:500;
+      transition:.16s ease;
+    }
+    .compose-btn:hover{box-shadow:0 3px 8px rgba(60,64,67,.23)}
+
+    .nav{
+      padding:0 16px 0 0;
+    }
+
+    .nav-item{
+      height:32px;
+      display:flex;
+      align-items:center;
+      gap:18px;
+      padding:0 12px 0 26px;
+      border-radius:0 18px 18px 0;
+      color:#3c4043;
+      font-size:14px;
+      transition:.14s ease;
+      width:100%;
+      text-align:left;
+      position:relative;
+    }
+
+    .nav-item:hover{background:#eaedf3}
+    .nav-item.active{
+      background:var(--blue-soft);
+      color:#001d35;
+      font-weight:700;
+    }
+
+    .nav-item svg{
+      width:19px;
+      height:19px;
+      flex:0 0 auto;
+      color:#4b5563;
+    }
+
+    .nav-item .count{
+      margin-left:auto;
+      font-size:12px;
+      color:#5f6368;
+      font-weight:700;
+    }
+
+    .labels-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:28px 22px 10px 24px;
+      color:#3c4043;
+      font-size:16px;
+      font-weight:500;
+    }
+
+    .training-card{
+      margin:auto 18px 18px;
+      padding:16px;
+      border:1px solid #dde3ea;
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 1px 2px rgba(60,64,67,.08);
+    }
+
+    .training-card h4{
+      margin:0 0 8px;
+      font-size:14px;
+      display:flex;
+      gap:7px;
+      align-items:center;
+    }
+
+    .training-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+    }
+
+    .main{
+      flex:1;
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    .topbar{
+      height:64px;
+      flex:0 0 64px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      padding:8px 18px;
+    }
+
+    .search-box{
+      height:48px;
+      width:min(720px, 100%);
+      border-radius:999px;
+      background:#eaf1fb;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:0 16px;
+      color:var(--muted);
+      flex:1;
+      max-width:720px;
+    }
+
+    .search-box input{
+      border:none;
+      outline:none;
+      background:transparent;
+      flex:1;
+      height:100%;
+      font-size:16px;
+      color:var(--text);
+    }
+
+    .top-actions{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:2px;
+    }
+
+    .training-toggle{
+      margin-left:8px;
+      height:36px;
+      padding:0 14px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid #dde3ea;
+      color:#3c4043;
+      font-size:13px;
+      font-weight:600;
+    }
+    .training-toggle.active{
+      background:var(--blue-soft);
+      color:#001d35;
+      border-color:var(--blue-soft);
+    }
+
+    .avatar{
+      width:40px;height:40px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      background:var(--purple);
+      color:white;
+      font-weight:700;
+      margin-left:6px;
+    }
+
+    .content-row{
+      flex:1;
+      min-height:0;
+      display:flex;
+      gap:14px;
+      padding:0 14px 14px 8px;
+    }
+
+    .mail-panel{
+      flex:1;
+      min-width:0;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius:24px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      box-shadow:0 1px 2px rgba(60,64,67,.09);
+    }
+
+    .safe-card{
+      margin:16px;
+      padding:18px 22px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      background:#fff;
+    }
+
+    .safe-left{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      min-width:0;
+    }
+
+    .shield{
+      width:38px;height:38px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      background:var(--blue);
+      font-weight:900;
+      flex:0 0 auto;
+    }
+
+    .safe-title{
+      font-weight:600;
+      margin-bottom:5px;
+      color:#111827;
+    }
+
+    .safe-sub{
+      color:var(--muted);
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .safe-actions{
+      display:flex;
+      align-items:center;
+      gap:24px;
+      font-size:14px;
+      white-space:nowrap;
+    }
+    .safe-actions .continue{color:#0b57d0;font-weight:700}
+    .safe-actions .no{color:#777;font-weight:700}
+
+    .toolbar{
+      height:48px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      color:var(--muted);
+      padding:0 10px;
+      flex:0 0 48px;
+    }
+
+    .toolbar-left,
+    .toolbar-right{
+      display:flex;
+      align-items:center;
+      gap:4px;
+    }
+
+    .mini-btn{
+      width:34px;height:34px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      color:var(--muted);
+    }
+    .mini-btn:hover{background:#eef2f7}
+
+    .range-text{font-size:13px;color:#5f6368;margin-right:6px}
+
+    .tabs{
+      height:58px;
+      flex:0 0 58px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:flex-end;
+      overflow-x:auto;
+    }
+
+    .tab{
+      height:58px;
+      min-width:185px;
+      padding:0 20px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:#5f6368;
+      position:relative;
+      font-size:14px;
+      transition:.14s ease;
+    }
+    .tab:hover{background:#f6f8fc}
+    .tab.active{
+      color:var(--blue);
+      font-weight:700;
+    }
+    .tab.active:after{
+      content:"";
+      position:absolute;
+      left:0;right:0;bottom:0;
+      height:3px;
+      background:var(--blue);
+      border-radius:3px 3px 0 0;
+    }
+
+    .pill{
+      background:var(--green);
+      color:#fff;
+      font-size:11px;
+      padding:2px 7px;
+      border-radius:999px;
+      font-weight:700;
+    }
+
+    .mail-split{
+      flex:1;
+      min-height:0;
+      display:grid;
+      grid-template-columns:minmax(380px, 1.12fr) minmax(380px,.88fr);
+    }
+
+    .email-list{
+      overflow:auto;
+      min-height:0;
+      border-right:1px solid var(--border);
+      background:#fff;
+    }
+
+    .email-row{
+      height:40px;
+      display:grid;
+      grid-template-columns:36px 34px minmax(120px,180px) minmax(0,1fr) 74px;
+      align-items:center;
+      border-bottom:1px solid var(--border-soft);
+      padding:0 12px;
+      font-size:14px;
+      background:#fff;
+      transition:.12s ease;
+    }
+
+    .email-row:hover{
+      background:#f8fbff;
+      box-shadow:inset 1px 0 0 #dadce0,inset -1px 0 0 #dadce0,0 1px 2px rgba(60,64,67,.15);
+      position:relative;
+      z-index:1;
+    }
+
+    .email-row.active{
+      background:#f2f6fc;
+    }
+
+    .email-row.unread{
+      font-weight:700;
+    }
+
+    .check{
+      width:14px;height:14px;
+      border:2px solid #c4c7c5;
+      border-radius:2px;
+      display:inline-block;
+    }
+
+    .star{
+      color:#c4c7c5;
+      font-size:20px;
+      line-height:1;
+    }
+    .star.on{color:var(--yellow)}
+    .sender{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      padding-right:10px;
+    }
+    .subject-preview{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color:#5f6368;
+    }
+    .email-row.unread .subject-preview strong{color:#111827}
+    .subject-preview strong{color:#202124}
+    .date{
+      text-align:right;
+      font-size:12px;
+      color:#202124;
+    }
+
+    .reading-pane{
+      min-height:0;
+      overflow:auto;
+      background:#fff;
+      padding:25px;
+    }
+
+    .message-title{
+      font-size:28px;
+      line-height:1.2;
+      font-weight:400;
+      margin:0 0 18px;
+    }
+
+    .message-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:22px;
+    }
+
+    .from-block{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .from-avatar{
+      width:40px;height:40px;
+      border-radius:50%;
+      background:#d3e3fd;
+      color:#174ea6;
+      display:grid;
+      place-items:center;
+      font-weight:700;
+    }
+
+    .from-name{font-size:14px;font-weight:700}
+    .from-email{font-size:13px;color:#5f6368;margin-top:3px}
+
+    .message-box{
+      border:1px solid #e5eaf0;
+      background:#f8fbff;
+      border-radius:24px;
+      padding:20px;
+      color:#202124;
+      font-size:15px;
+      line-height:1.65;
+      white-space:pre-wrap;
+      margin-bottom:18px;
+    }
+
+    .drill-box{
+      border:1px dashed #c7d3e4;
+      background:#fafcff;
+      border-radius:24px;
+      padding:18px;
+      color:#5f6368;
+      font-size:14px;
+      line-height:1.6;
+    }
+
+    .drill-title{
+      color:#174ea6;
+      font-weight:700;
+      margin-bottom:8px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .trainer{
+      width:370px;
+      flex:0 0 370px;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow:0 1px 2px rgba(60,64,67,.09);
+      display:flex;
+      flex-direction:column;
+    }
+    .trainer.hidden{display:none}
+
+    .trainer-head{
+      padding:18px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+    }
+    .eyebrow{
+      color:#5f6368;
+      text-transform:uppercase;
+      letter-spacing:.18em;
+      font-size:11px;
+      font-weight:800;
+    }
+    .trainer h3{
+      margin:4px 0 0;
+      font-size:22px;
+    }
+
+    .avg{
+      background:#e8f0fe;
+      color:#174ea6;
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:14px;
+    }
+
+    .trainer-body{
+      overflow:auto;
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .trainer-section{
+      border:1px solid #e6ebf2;
+      border-radius:22px;
+      padding:14px;
+      background:#fff;
+    }
+    .trainer-section.blue{
+      background:#f8fbff;
+    }
+    .section-title{
+      font-size:14px;
+      font-weight:800;
+      margin:0 0 10px;
+    }
+
+    .scenario-btn{
+      width:100%;
+      border:1px solid #e6ebf2;
+      border-radius:16px;
+      text-align:left;
+      padding:12px;
+      margin-bottom:9px;
+      transition:.14s ease;
+      background:white;
+    }
+    .scenario-btn:hover{background:#fafcff}
+    .scenario-btn.active{
+      border-color:#8ab4f8;
+      background:#eef4ff;
+    }
+    .scenario-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      font-size:14px;
+      font-weight:800;
+    }
+    .difficulty{
+      background:#fff;
+      border:1px solid #d9e2ef;
+      color:#5f6368;
+      border-radius:999px;
+      font-size:11px;
+      padding:4px 8px;
+      white-space:nowrap;
+    }
+    .scenario-sub{
+      color:#5f6368;
+      font-size:12px;
+      margin-top:7px;
+    }
+
+    .rubric-row{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      color:#5f6368;
+      font-size:14px;
+      margin:8px 0;
+    }
+
+    .attempt{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      background:#f7f9fc;
+      border-radius:15px;
+      padding:10px;
+      margin:8px 0;
+      font-size:13px;
+    }
+    .attempt strong{
+      display:block;
+      font-size:13px;
+      color:#202124;
+      margin-bottom:3px;
+    }
+    .attempt span{
+      color:#5f6368;
+      font-size:12px;
+    }
+    .attempt .score{
+      color:#174ea6;
+      font-weight:800;
+      font-size:16px;
+    }
+
+    .grade-card{
+      border:1px solid #dbe6f7;
+      background:#fbfdff;
+      border-radius:22px;
+      padding:14px;
+    }
+
+    .grade-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      margin-bottom:12px;
+    }
+    .big-score{
+      background:#e8f0fe;
+      color:#174ea6;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:20px;
+      font-weight:900;
+    }
+
+    .check-line{
+      border:1px solid #edf1f5;
+      border-radius:15px;
+      padding:10px;
+      margin:8px 0;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      font-size:13px;
+      background:white;
+    }
+    .status-dot{
+      width:18px;height:18px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      flex:0 0 18px;
+      font-size:12px;
+      color:#fff;
+      font-weight:900;
+      margin-top:1px;
+    }
+    .status-dot.good{background:var(--green)}
+    .status-dot.bad{background:var(--red)}
+    .check-label{font-weight:800;color:#202124;margin-bottom:3px}
+    .check-note{color:#5f6368;line-height:1.4}
+
+    .coaching{
+      margin-top:12px;
+      background:#fff8e1;
+      color:#6b4f00;
+      border-radius:16px;
+      padding:12px;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .coaching strong{display:block;margin-bottom:6px}
+    .coaching ul{margin:0;padding-left:18px}
+
+    .compose-modal{
+      position:fixed;
+      right:20px;
+      bottom:0;
+      width:min(720px, calc(100vw - 40px));
+      background:#fff;
+      border:1px solid #cfd8e3;
+      border-radius:16px 16px 0 0;
+      box-shadow:var(--soft-shadow);
+      z-index:50;
+      overflow:hidden;
+      transform:translateY(0);
+      transition:.2s ease;
+    }
+    .compose-modal.closed{
+      display:none;
+    }
+
+    .compose-head{
+      height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 14px;
+      background:#f2f6fc;
+      color:#202124;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .compose-field{
+      height:38px;
+      border-bottom:1px solid var(--border-soft);
+      padding:0 14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .compose-field label{
+      font-size:13px;
+      color:#5f6368;
+      min-width:52px;
+    }
+    .compose-field input{
+      border:none;
+      outline:none;
+      flex:1;
+      height:100%;
+      font-size:14px;
+      color:#202124;
+    }
+
+    .compose-body-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 240px;
+      gap:14px;
+      padding:14px;
+      max-height:calc(90vh - 160px);
+      overflow:auto;
+    }
+
+    textarea{
+      width:100%;
+      min-height:300px;
+      resize:vertical;
+      outline:none;
+      border:1px solid #e4e9f1;
+      border-radius:18px;
+      padding:14px;
+      font-size:14px;
+      line-height:1.6;
+    }
+    textarea:focus{border-color:#8ab4f8}
+
+    .scenario-info{
+      border:1px solid #dbe6f7;
+      background:#f8fbff;
+      border-radius:18px;
+      padding:12px;
+      font-size:13px;
+      line-height:1.45;
+      color:#5f6368;
+    }
+    .scenario-info strong{
+      color:#174ea6;
+      display:block;
+      margin-bottom:5px;
+    }
+
+    .keywords{
+      margin-top:10px;
+      border:1px solid var(--border-soft);
+      border-radius:18px;
+      padding:12px;
+    }
+    .keywords-title{
+      font-size:13px;
+      font-weight:800;
+      margin-bottom:8px;
+    }
+    .keyword-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+    .keyword{
+      background:#eef4ff;
+      color:#174ea6;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      padding:5px 8px;
+    }
+
+    .compose-foot{
+      height:54px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-top:1px solid var(--border-soft);
+      padding:0 14px;
+    }
+
+    .send-grade{
+      background:var(--blue-dark);
+      color:#fff;
+      border-radius:999px;
+      height:36px;
+      padding:0 18px;
+      font-weight:700;
+      font-size:14px;
+    }
+    .send-grade:hover{background:#0842a0}
+
+    .open-compose{
+      position:fixed;
+      right:22px;
+      bottom:22px;
+      z-index:40;
+      background:var(--blue-dark);
+      color:white;
+      border-radius:999px;
+      padding:13px 18px;
+      box-shadow:0 6px 18px rgba(11,87,208,.28);
+      font-weight:700;
+      display:none;
+    }
+    .open-compose.show{display:block}
+
+    .right-rail{
+      width:45px;
+      border-left:1px solid #edf1f5;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding-top:70px;
+      gap:18px;
+    }
+    .rail-dot{
+      width:20px;height:20px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-size:12px;
+      font-weight:900;
+    }
+    .rail-dot.calendar{background:#4285f4}
+    .rail-dot.keep{background:#fbbc04}
+    .rail-dot.tasks{background:#1a73e8}
+    .rail-dot.contacts{background:#3f51b5}
+
+    .mobile-note{
+      display:none;
+      padding:8px 14px;
+      background:#fff8e1;
+      border-bottom:1px solid #f3e6a4;
+      color:#6b4f00;
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .export-btn{
+      width:100%;
+      height:38px;
+      background:#eef4ff;
+      color:#174ea6;
+      border:1px solid #dbe6f7;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:800;
+      margin-top:8px;
+    }
+
+    @media (max-width:1300px){
+      .trainer{display:none}
+      .training-toggle{display:none}
+    }
+
+    @media (max-width:1100px){
+      .mail-split{
+        grid-template-columns:1fr;
+      }
+      .reading-pane{
+        display:none;
+      }
+    }
+
+    @media (max-width:820px){
+      body{overflow:auto}
+      .app{height:auto;min-height:100vh}
+      .sidebar{display:none}
+      .right-rail{display:none}
+      .topbar{position:sticky;top:0;z-index:20;background:#f6f8fc}
+      .content-row{padding:0 8px 90px}
+      .mail-panel{border-radius:16px}
+      .safe-card{display:none}
+      .mail-split{display:block}
+      .email-list{border-right:none}
+      .email-row{
+        grid-template-columns:28px 30px minmax(80px,120px) minmax(0,1fr) 58px;
+        padding:0 8px;
+      }
+      .compose-modal{
+        right:0;
+        left:0;
+        bottom:0;
+        width:100vw;
+        border-radius:16px 16px 0 0;
+      }
+      .compose-body-grid{
+        grid-template-columns:1fr;
+      }
+      .mobile-note{display:block}
+      .top-actions .icon-btn:nth-child(-n+3){display:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <button class="icon-btn" aria-label="Main menu"><span class="hamburger"><span></span></span></button>
+        <span class="gmail-logo" aria-hidden="true"></span>
+        <span class="brand-text">Gmail</span>
+      </div>
+
+      <div class="compose-wrap">
+        <button class="compose-btn" id="composeButton">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          Compose
+        </button>
+      </div>
+
+      <nav class="nav" id="leftNav"></nav>
+
+      <div class="labels-title">
+        <span>Labels</span><span>＋</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-item"><svg viewBox="0 0 24 24" fill="#1a73e8"><circle cx="12" cy="12" r="7"/></svg>Client</button>
+        <button class="nav-item"><svg viewBox="0 0 24 24" fill="#34a853"><circle cx="12" cy="12" r="7"/></svg>Internal</button>
+        <button class="nav-item"><svg viewBox="0 0 24 24" fill="#fbbc04"><circle cx="12" cy="12" r="7"/></svg>Follow-up</button>
+      </nav>
+
+      <div class="training-card">
+        <h4>✅ Training Mode</h4>
+        <p>Gmail-style simulator for VA email practice, familiarity drills, and accuracy scoring.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="searchInput" type="text" placeholder="Search mail" />
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+        </div>
+
+        <div class="top-actions">
+          <button class="icon-btn" title="Help">?</button>
+          <button class="icon-btn" title="Settings">⚙</button>
+          <button class="icon-btn" title="AI">✦</button>
+          <button class="training-toggle active" id="trainingToggle">Training Panel</button>
+          <div class="avatar">A</div>
+        </div>
+      </header>
+
+      <div class="mobile-note">
+        Mobile view shows the inbox and compose window. For the full Gmail training panel, open this simulator on a laptop or desktop screen.
+      </div>
+
+      <div class="content-row">
+        <section class="mail-panel">
+          <div class="safe-card">
+            <div class="safe-left">
+              <div class="shield">G</div>
+              <div>
+                <div class="safe-title">Get additional protection against phishing</div>
+                <div class="safe-sub">Turn on Enhanced Safe Browsing to get additional protection against dangerous emails</div>
+              </div>
+            </div>
+            <div class="safe-actions">
+              <button class="continue">Continue</button>
+              <button class="no">No thanks</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <button class="mini-btn"><span class="check"></span></button>
+              <button class="mini-btn" id="refreshBtn">↻</button>
+              <button class="mini-btn">⋮</button>
+            </div>
+            <div class="toolbar-right">
+              <span class="range-text" id="rangeText">1–16 of 16</span>
+              <button class="mini-btn">‹</button>
+              <button class="mini-btn">›</button>
+              <button class="mini-btn">⌨</button>
+            </div>
+          </div>
+
+          <div class="tabs" id="tabs"></div>
+
+          <div class="mail-split">
+            <div class="email-list" id="emailList"></div>
+
+            <div class="reading-pane">
+              <h1 class="message-title" id="readSubject">Select an email</h1>
+              <div class="message-head">
+                <div class="from-block">
+                  <div class="from-avatar" id="fromAvatar">G</div>
+                  <div>
+                    <div class="from-name" id="fromName">Gmail Training</div>
+                    <div class="from-email" id="fromEmail">training@example.com</div>
+                  </div>
+                </div>
+                <div>
+                  <button class="mini-btn">↩</button>
+                  <button class="mini-btn">⋮</button>
+                </div>
+              </div>
+              <div class="message-box" id="readBody"></div>
+              <div class="drill-box">
+                <div class="drill-title">✦ VA Familiarity Drill</div>
+                Use the inbox like a real mailbox: open messages, identify which tab they belong to, review the subject formatting, and practice writing polished replies inside the compose window.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="trainer" id="trainerPanel">
+          <div class="trainer-head">
+            <div>
+              <div class="eyebrow">Trainer Panel</div>
+              <h3>Accuracy Grader</h3>
+            </div>
+            <div class="avg" id="averageScore">Avg 0%</div>
+          </div>
+
+          <div class="trainer-body">
+            <div class="trainer-section blue">
+              <p class="section-title">Scenario</p>
+              <div id="scenarioList"></div>
+            </div>
+
+            <div class="trainer-section">
+              <p class="section-title">Scoring Rubric</p>
+              <div class="rubric-row"><span>Recipient + subject</span><strong>25 pts</strong></div>
+              <div class="rubric-row"><span>Greeting + closing</span><strong>20 pts</strong></div>
+              <div class="rubric-row"><span>Required details</span><strong>25 pts</strong></div>
+              <div class="rubric-row"><span>Professional tone</span><strong>15 pts</strong></div>
+              <div class="rubric-row"><span>Readable structure</span><strong>10 pts</strong></div>
+              <div class="rubric-row"><span>Attachment mention</span><strong>5 pts</strong></div>
+            </div>
+
+            <div class="trainer-section">
+              <p class="section-title">Attempts</p>
+              <div id="attemptList"></div>
+              <button class="export-btn" id="exportBtn">Export Attempts CSV</button>
+            </div>
+
+            <div id="gradeOutput"></div>
+          </div>
+        </aside>
+
+        <aside class="right-rail">
+          <div class="rail-dot calendar">31</div>
+          <div class="rail-dot keep">!</div>
+          <div class="rail-dot tasks">✓</div>
+          <div class="rail-dot contacts">👤</div>
+          <button class="icon-btn">＋</button>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <div class="compose-modal" id="composeModal">
+    <div class="compose-head">
+      <span>New Message</span>
+      <button class="mini-btn" id="closeCompose">×</button>
+    </div>
+
+    <div class="compose-field">
+      <label>To</label>
+      <input id="toInput" placeholder="Recipients" />
+    </div>
+
+    <div class="compose-field">
+      <label>Cc/Bcc</label>
+      <input id="ccInput" placeholder="Optional" />
+    </div>
+
+    <div class="compose-field">
+      <label>Subject</label>
+      <input id="subjectInput" placeholder="Subject" />
+    </div>
+
+    <div class="compose-body-grid">
+      <textarea id="bodyInput" placeholder="Compose your email here..."></textarea>
+
+      <div>
+        <div class="scenario-info">
+          <strong>Active Scenario</strong>
+          <div id="activeScenarioText"></div>
+        </div>
+
+        <div class="keywords">
+          <div class="keywords-title">Required Keywords</div>
+          <div class="keyword-list" id="keywordList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="compose-foot">
+      <div>
+        <button class="send-grade" id="gradeBtn">Submit for Grade</button>
+        <button class="mini-btn" title="Attach">📎</button>
+        <button class="mini-btn" title="More">⋮</button>
+      </div>
+      <span style="font-size:12px;color:#5f6368;">Gmail-style training compose window</span>
+    </div>
+  </div>
+
+  <button class="open-compose" id="openCompose">Open Compose</button>
+
+  <script>
+    const navItems = [
+      { label: "Inbox", icon: "inbox", count: 16, active: true },
+      { label: "Starred", icon: "star" },
+      { label: "Snoozed", icon: "clock" },
+      { label: "Sent", icon: "send" },
+      { label: "Drafts", icon: "file", count: 2 },
+      { label: "Important", icon: "tag" },
+      { label: "Spam", icon: "warn", count: 3 },
+      { label: "Trash", icon: "trash" }
+    ];
+
+    const tabs = [
+      { id: "primary", label: "Primary", icon: "▣" },
+      { id: "promotions", label: "Promotions", icon: "◇", pill: "13 new" },
+      { id: "social", label: "Social", icon: "♙" }
+    ];
+
+    const emails = [
+      {
+        id:1, sender:"ChatGPT", email:"updates@chatgpt.com",
+        subject:"Meet ChatGPT Images 2.0",
+        preview:"Create polished visuals, clearer text, and ready-to-use formats with Images 2.0.",
+        body:"Hi Ava,\n\nWe launched a new image workflow today. Try the updated creation tools and share what you build.\n\nBest,\nChatGPT Team",
+        date:"Apr 27", unread:true, starred:false, tab:"primary"
+      },
+      {
+        id:2, sender:"a0.dev", email:"deals@a0.dev",
+        subject:"Your 50% off expires in 3 hours",
+        preview:"Act fast to claim your deal.",
+        body:"Hi there,\n\nYour promotional offer ends soon. Upgrade today if you want to keep building without limits.\n\nThanks,\na0.dev",
+        date:"Apr 24", unread:true, starred:false, tab:"promotions"
+      },
+      {
+        id:3, sender:"Netlify", email:"team@netlify.com",
+        subject:"[Netlify] Your new Credits Free team is ready",
+        preview:"Welcome to Netlify Free! Your new team is ready.",
+        body:"Hello Ava,\n\nYour Netlify team has been created successfully. You can now invite teammates and connect your Git provider.\n\nRegards,\nNetlify",
+        date:"Apr 23", unread:true, starred:false, tab:"primary"
+      },
+      {
+        id:4, sender:"Netlify", email:"billing@netlify.com",
+        subject:"[Netlify] Your projects have been suspended due to credit limit exceeded",
+        preview:"Your projects have been suspended due to credit limit exceeded.",
+        body:"Hi Ava,\n\nYour team has exceeded the allowed credits for this billing cycle. Review usage and update the plan to restore suspended sites.\n\nThanks,\nNetlify Billing",
+        date:"Apr 23", unread:false, starred:true, tab:"primary"
+      },
+      {
+        id:5, sender:"Netlify", email:"credits@netlify.com",
+        subject:"[Netlify] You've used 75% of your credits",
+        preview:"You're using your credits. Your credit usage is getting high.",
+        body:"Hi Ava,\n\nYour team has used 75% of the credits available in the current cycle. Please review site usage and build minutes.\n\nNetlify Team",
+        date:"Apr 23", unread:false, starred:false, tab:"primary"
+      },
+      {
+        id:6, sender:"Vishal from Rocket", email:"vishal@rocket.com",
+        subject:"You just got a research team, a dev team, and an analyst",
+        preview:"Hello Ava, Welcome to Rocket. You just got a strategy team for your decisions.",
+        body:"Hi Ava,\n\nI wanted to introduce our onboarding resources and next steps. Let me know if you want a product walkthrough this week.\n\nBest,\nVishal",
+        date:"Apr 23", unread:false, starred:false, tab:"primary"
+      },
+      {
+        id:7, sender:"Seth at a0.dev", email:"seth@a0.dev",
+        subject:"Welcome to a0.dev!",
+        preview:"Thanks for signing up for a0.dev. Let's get started.",
+        body:"Welcome to the party!\n\nHere are a few helpful links to help you start building faster today.\n\nSeth",
+        date:"Apr 23", unread:false, starred:false, tab:"promotions"
+      },
+      {
+        id:8, sender:"Google", email:"account-security-noreply@google.com",
+        subject:"Security alert",
+        preview:"A new sign-in on Windows was noticed for your Google Account.",
+        body:"We noticed a new sign-in to your Google Account on a Windows device. If this was you, no action is needed. If not, secure your account immediately.",
+        date:"Apr 16", unread:true, starred:false, tab:"primary"
+      },
+      {
+        id:9, sender:"Eric at StackBlitz", email:"eric@stackblitz.com",
+        subject:"You're in! Let's Bolt.new into action 🚀",
+        preview:"Here are a couple notes to succeed with building in Bolt.",
+        body:"Hi Ava,\n\nWe are excited to have you on board. Here are some quick start suggestions to help you ship faster.\n\nBest,\nEric",
+        date:"Apr 2", unread:false, starred:false, tab:"social"
+      },
+      {
+        id:10, sender:"Lovable", email:"hello@lovable.dev",
+        subject:"Welcome to Lovable.",
+        preview:"Ready to build apps and websites by chatting with AI?",
+        body:"Welcome!\n\nStart with a prompt, describe the website you want, and keep improving it step by step.\n\nLovable",
+        date:"Mar 25", unread:false, starred:false, tab:"promotions"
+      },
+      {
+        id:11, sender:"Vercel", email:"notifications@vercel.com",
+        subject:"We're updating our Terms of Service",
+        preview:"We're updating our Terms of Service and Privacy Policy.",
+        body:"Hi Ava,\n\nWe updated our Terms of Service and Privacy Policy to reflect product and platform changes.\n\nVercel",
+        date:"Mar 18", unread:false, starred:false, tab:"primary"
+      },
+      {
+        id:12, sender:"GitHub", email:"noreply@github.com",
+        subject:"[GitHub] A third-party GitHub Application has been added to your account",
+        preview:"A third-party GitHub Application was added to your account.",
+        body:"Hey Ava,\n\nA third-party GitHub Application has been added to your account. Review your application permissions if this was not expected.\n\nGitHub",
+        date:"Mar 7", unread:false, starred:false, tab:"primary"
+      }
+    ];
+
+    const scenarios = [
+      {
+        id:"client-follow-up",
+        title:"Client Follow-up Reply",
+        difficulty:"Easy",
+        badge:"Format Accuracy",
+        to:"niccole@agencydemo.com",
+        subject:"Re: Updated COI PDF",
+        instruction:"Reply professionally. Confirm that you received the PDF, mention that it has already been filled out, and say that you already forwarded it to Madam Niccole. Mention the attached file clearly.",
+        mustInclude:["received","filled out","forwarded","attached","madam niccole"],
+        mustAvoid:["lol"," u ","asap!!!","bro","haha"]
+      },
+      {
+        id:"absence-notice",
+        title:"Attendance Update",
+        difficulty:"Normal",
+        badge:"Professional Tone",
+        to:"training@agencydemo.com",
+        subject:"Attendance Update for Today",
+        instruction:"Write a short internal update stating that Channie is absent today because she has a fever. Keep it polite, direct, and professional.",
+        mustInclude:["channie","absent","today","fever"],
+        mustAvoid:["super sick","haha","idk"," u ","lol"]
+      },
+      {
+        id:"extension-confirmation",
+        title:"Shift Extension Confirmation",
+        difficulty:"Hard",
+        badge:"Clarity & Completeness",
+        to:"lead@agencydemo.com",
+        subject:"Extension Confirmation for South City Insurance",
+        instruction:"Send a confirmation that two VAs from South City Insurance will extend one hour, that they were already informed to stay until 6 AM, and that they agreed to it. Use a polished client-ready format.",
+        mustInclude:["two va","south city insurance","extend","6 am","agreed","informed"],
+        mustAvoid:["okay lang","lol","thx","pls","haha"]
+      },
+      {
+        id:"client-escalation",
+        title:"Client Escalation Email",
+        difficulty:"Advanced",
+        badge:"Escalation Judgment",
+        to:"accountmanager@agencydemo.com",
+        subject:"Urgent: Client Request for Review",
+        instruction:"Write an escalation email to the Account Manager. Explain that the client request appears urgent, but it needs verification before action. Ask for confirmation and next steps.",
+        mustInclude:["urgent","verification","confirmation","next steps","client"],
+        mustAvoid:["i will just do it","no need to verify","lol","asap!!!"]
+      }
+    ];
+
+    let state = {
+      selectedTab:"primary",
+      selectedEmailId:1,
+      search:"",
+      scenarioId:"client-follow-up",
+      attempts: JSON.parse(localStorage.getItem("gmailTrainingAttempts") || "[]"),
+      starred: JSON.parse(localStorage.getItem("gmailTrainingStarred") || "[4]")
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function svgIcon(type){
+      const common = 'viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+      const paths = {
+        inbox:`<svg ${common}><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>`,
+        star:`<svg ${common}><path d="m12 2 3.09 6.26L22 9.27l-5 4.88L18.18 21 12 17.77 5.82 21 7 14.15l-5-4.88 6.91-1.01Z"/></svg>`,
+        clock:`<svg ${common}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+        send:`<svg ${common}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`,
+        file:`<svg ${common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>`,
+        tag:`<svg ${common}><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3H4a1 1 0 0 0-1 1v5.59A2 2 0 0 0 3.59 11l9.59 9.59a2 2 0 0 0 2.82 0l4.59-4.59a2 2 0 0 0 0-2.59Z"/><path d="M7 7h.01"/></svg>`,
+        warn:`<svg ${common}><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`,
+        trash:`<svg ${common}><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>`
+      };
+      return paths[type] || "";
+    }
+
+    function currentScenario(){
+      return scenarios.find(s => s.id === state.scenarioId) || scenarios[0];
+    }
+
+    function renderNav(){
+      $("leftNav").innerHTML = navItems.map(item => `
+        <button class="nav-item ${item.active ? "active" : ""}">
+          ${svgIcon(item.icon)}
+          <span>${item.label}</span>
+          ${item.count ? `<span class="count">${item.count}</span>` : ""}
+        </button>
+      `).join("");
+    }
+
+    function renderTabs(){
+      $("tabs").innerHTML = tabs.map(tab => `
+        <button class="tab ${state.selectedTab === tab.id ? "active" : ""}" data-tab="${tab.id}">
+          <span>${tab.icon}</span>
+          <span>${tab.label}</span>
+          ${tab.pill ? `<span class="pill">${tab.pill}</span>` : ""}
+        </button>
+      `).join("");
+
+      document.querySelectorAll("[data-tab]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedTab = btn.dataset.tab;
+          const visible = filteredEmails();
+          state.selectedEmailId = visible[0]?.id || null;
+          renderAll();
+        });
+      });
+    }
+
+    function filteredEmails(){
+      const q = state.search.toLowerCase().trim();
+      return emails.filter(email => {
+        const matchesTab = email.tab === state.selectedTab;
+        const haystack = `${email.sender} ${email.subject} ${email.preview}`.toLowerCase();
+        return matchesTab && haystack.includes(q);
+      });
+    }
+
+    function renderEmailList(){
+      const visible = filteredEmails();
+      $("rangeText").textContent = visible.length ? `1–${visible.length} of ${visible.length}` : "0 of 0";
+      $("emailList").innerHTML = visible.map(email => `
+        <div class="email-row ${email.unread ? "unread" : ""} ${state.selectedEmailId === email.id ? "active" : ""}" data-email="${email.id}">
+          <span class="check"></span>
+          <button class="star ${state.starred.includes(email.id) ? "on" : ""}" data-star="${email.id}">★</button>
+          <div class="sender">${email.sender}</div>
+          <div class="subject-preview"><strong>${email.subject}</strong> - ${email.preview}</div>
+          <div class="date">${email.date}</div>
+        </div>
+      `).join("");
+
+      document.querySelectorAll("[data-email]").forEach(row => {
+        row.addEventListener("click", () => {
+          state.selectedEmailId = Number(row.dataset.email);
+          renderReadingPane();
+          renderEmailList();
+        });
+      });
+
+      document.querySelectorAll("[data-star]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = Number(btn.dataset.star);
+          if(state.starred.includes(id)){
+            state.starred = state.starred.filter(x => x !== id);
+          } else {
+            state.starred.push(id);
+          }
+          localStorage.setItem("gmailTrainingStarred", JSON.stringify(state.starred));
+          renderEmailList();
+        });
+      });
+    }
+
+    function renderReadingPane(){
+      const email = emails.find(e => e.id === state.selectedEmailId) || filteredEmails()[0];
+      if(!email){
+        $("readSubject").textContent = "No email selected";
+        $("fromAvatar").textContent = "G";
+        $("fromName").textContent = "Gmail Training";
+        $("fromEmail").textContent = "";
+        $("readBody").textContent = "No emails match your search.";
+        return;
+      }
+
+      $("readSubject").textContent = email.subject;
+      $("fromAvatar").textContent = email.sender.charAt(0).toUpperCase();
+      $("fromName").textContent = email.sender;
+      $("fromEmail").textContent = `from ${email.email}`;
+      $("readBody").textContent = email.body;
+    }
+
+    function renderScenarios(){
+      $("scenarioList").innerHTML = scenarios.map(s => `
+        <button class="scenario-btn ${s.id === state.scenarioId ? "active" : ""}" data-scenario="${s.id}">
+          <div class="scenario-top">
+            <span>${s.title}</span>
+            <span class="difficulty">${s.difficulty}</span>
+          </div>
+          <div class="scenario-sub">${s.badge}</div>
+        </button>
+      `).join("");
+
+      document.querySelectorAll("[data-scenario]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.scenarioId = btn.dataset.scenario;
+          setComposeForScenario();
+          renderScenarios();
+          renderComposeScenario();
+          $("gradeOutput").innerHTML = "";
+          openCompose();
+        });
+      });
+    }
+
+    function setComposeForScenario(){
+      const s = currentScenario();
+      $("toInput").value = s.to;
+      $("ccInput").value = "";
+      $("subjectInput").value = s.subject;
+
+      if(s.id === "client-follow-up"){
+        $("bodyInput").value = "Good morning Madam,\n\nThank you for sending the PDF. I received it and it has already been filled out. I already forwarded it to Madam Niccole. Please see the attached file below.\n\nThank you,\nVA Trainee";
+      } else {
+        $("bodyInput").value = "Good morning,\n\n" + s.instruction + "\n\nThank you,\nVA Trainee";
+      }
+    }
+
+    function renderComposeScenario(){
+      const s = currentScenario();
+      $("activeScenarioText").textContent = s.instruction;
+      $("keywordList").innerHTML = s.mustInclude.map(k => `<span class="keyword">${k}</span>`).join("");
+    }
+
+    function gradeEmail(){
+      const s = currentScenario();
+      const compose = {
+        to:$("toInput").value.trim(),
+        cc:$("ccInput").value.trim(),
+        subject:$("subjectInput").value.trim(),
+        body:$("bodyInput").value
+      };
+
+      const text = `${compose.subject} ${compose.body}`.toLowerCase();
+      const checks = [];
+      let score = 0;
+
+      const hasRecipient = compose.to.length > 0 && compose.to.includes("@");
+      checks.push({
+        label:"Recipient entered correctly",
+        passed:hasRecipient,
+        points:10,
+        note:hasRecipient ? "A valid recipient was added." : "Add a valid recipient email address."
+      });
+      if(hasRecipient) score += 10;
+
+      const subjectStrong = compose.subject.length >= 5;
+      checks.push({
+        label:"Subject line is present and useful",
+        passed:subjectStrong,
+        points:15,
+        note:subjectStrong ? "The subject is clear enough." : "Use a clear subject line."
+      });
+      if(subjectStrong) score += 15;
+
+      const hasGreeting = /^(hi|hello|good morning|good afternoon|good evening|dear)\b/i.test(compose.body.trim());
+      checks.push({
+        label:"Professional greeting used",
+        passed:hasGreeting,
+        points:10,
+        note:hasGreeting ? "Greeting detected." : "Start with a professional greeting."
+      });
+      if(hasGreeting) score += 10;
+
+      const includesRequired = s.mustInclude.filter(item => text.includes(item));
+      const requiredRatio = includesRequired.length / s.mustInclude.length;
+      const completenessPoints = Math.round(requiredRatio * 25);
+      checks.push({
+        label:"Required details are included",
+        passed:requiredRatio >= .8,
+        points:25,
+        note:includesRequired.length === s.mustInclude.length
+          ? "All key details are present."
+          : `Included ${includesRequired.length} of ${s.mustInclude.length} required details.`
+      });
+      score += completenessPoints;
+
+      const textWithSpaces = ` ${text} `;
+      const avoidedBadTerms = s.mustAvoid.every(item => !textWithSpaces.includes(item));
+      checks.push({
+        label:"Tone stays professional",
+        passed:avoidedBadTerms,
+        points:15,
+        note:avoidedBadTerms ? "No casual or risky wording detected." : "Remove slang, shortcuts, or unprofessional phrasing."
+      });
+      if(avoidedBadTerms) score += 15;
+
+      const hasClosing = /(thank you|thanks|best regards|regards|sincerely|respectfully)/i.test(compose.body);
+      checks.push({
+        label:"Professional closing used",
+        passed:hasClosing,
+        points:10,
+        note:hasClosing ? "Closing detected." : "End with a professional closing."
+      });
+      if(hasClosing) score += 10;
+
+      const nonEmptyLines = compose.body.split("\n").filter(line => line.trim().length > 0).length;
+      const hasStructure = nonEmptyLines >= 4;
+      checks.push({
+        label:"Email has readable structure",
+        passed:hasStructure,
+        points:10,
+        note:hasStructure ? "The email uses enough structure and spacing." : "Use line breaks so the email is easier to read."
+      });
+      if(hasStructure) score += 10;
+
+      const needsAttachment = s.mustInclude.includes("attached");
+      const attachmentMention = /attach|attached|file below/i.test(compose.body);
+      checks.push({
+        label:"Attachment is mentioned when relevant",
+        passed:attachmentMention || !needsAttachment,
+        points:5,
+        note:(attachmentMention || !needsAttachment) ? "Attachment reference looks good." : "Mention the attachment clearly."
+      });
+      if(attachmentMention || !needsAttachment) score += 5;
+
+      const capped = Math.min(100, score);
+      const verdict = capped >= 90 ? "Excellent" : capped >= 80 ? "Pass" : "Needs Coaching";
+
+      const feedback = [];
+      if(!hasRecipient) feedback.push("Add a valid recipient email address.");
+      if(!subjectStrong) feedback.push("Use a more specific subject line.");
+      if(!hasGreeting) feedback.push("Add a professional greeting at the beginning.");
+      if(requiredRatio < .8) feedback.push("Include all required scenario details before submitting.");
+      if(!avoidedBadTerms) feedback.push("Remove casual wording to keep the message client-ready.");
+      if(!hasClosing) feedback.push("Add a polite closing such as Thank you or Best regards.");
+      if(!hasStructure) feedback.push("Use cleaner spacing and short paragraphs for readability.");
+      if(needsAttachment && !attachmentMention) feedback.push("State that the file is attached or available below.");
+
+      const attempt = {
+        id:Date.now(),
+        date:new Date().toLocaleString(),
+        scenario:s.title,
+        score:capped,
+        verdict,
+        to:compose.to,
+        subject:compose.subject
+      };
+
+      state.attempts.unshift(attempt);
+      localStorage.setItem("gmailTrainingAttempts", JSON.stringify(state.attempts.slice(0,50)));
+
+      renderAttempts();
+      renderGrade({score:capped, verdict, checks, feedback});
+    }
+
+    function renderAttempts(){
+      const attempts = state.attempts || [];
+      const avg = attempts.length ? Math.round(attempts.reduce((sum,a) => sum + a.score, 0) / attempts.length) : 0;
+      $("averageScore").textContent = `Avg ${avg}%`;
+
+      $("attemptList").innerHTML = attempts.length ? attempts.slice(0,6).map(a => `
+        <div class="attempt">
+          <div>
+            <strong>${a.scenario}</strong>
+            <span>${a.verdict} • ${a.date || ""}</span>
+          </div>
+          <div class="score">${a.score}%</div>
+        </div>
+      `).join("") : `<div class="attempt"><div><strong>No graded attempts yet</strong><span>Submit an email to begin tracking.</span></div></div>`;
+    }
+
+    function renderGrade(result){
+      $("gradeOutput").innerHTML = `
+        <div class="grade-card">
+          <div class="grade-top">
+            <div>
+              <div class="section-title" style="margin:0;">Latest Grade</div>
+              <div style="color:#5f6368;font-size:12px;">${result.verdict}</div>
+            </div>
+            <div class="big-score">${result.score}%</div>
+          </div>
+
+          ${result.checks.map(c => `
+            <div class="check-line">
+              <div class="status-dot ${c.passed ? "good" : "bad"}">${c.passed ? "✓" : "!"}</div>
+              <div>
+                <div class="check-label">${c.label}</div>
+                <div class="check-note">${c.note}</div>
+              </div>
+            </div>
+          `).join("")}
+
+          ${result.feedback.length ? `
+            <div class="coaching">
+              <strong>Coaching Notes</strong>
+              <ul>${result.feedback.map(f => `<li>${f}</li>`).join("")}</ul>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    function openCompose(){
+      $("composeModal").classList.remove("closed");
+      $("openCompose").classList.remove("show");
+    }
+
+    function closeCompose(){
+      $("composeModal").classList.add("closed");
+      $("openCompose").classList.add("show");
+    }
+
+    function exportAttempts(){
+      const rows = [["Date","Scenario","Score","Verdict","To","Subject"]];
+      state.attempts.forEach(a => rows.push([a.date,a.scenario,a.score,a.verdict,a.to,a.subject]));
+      const csv = rows.map(row => row.map(value => `"${String(value || "").replaceAll('"','""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], {type:"text/csv"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "gmail-va-training-attempts.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderAll(){
+      renderNav();
+      renderTabs();
+      renderEmailList();
+      renderReadingPane();
+      renderScenarios();
+      renderComposeScenario();
+      renderAttempts();
+    }
+
+    $("searchInput").addEventListener("input", (e) => {
+      state.search = e.target.value;
+      const visible = filteredEmails();
+      state.selectedEmailId = visible[0]?.id || null;
+      renderEmailList();
+      renderReadingPane();
+    });
+
+    $("composeButton").addEventListener("click", openCompose);
+    $("openCompose").addEventListener("click", openCompose);
+    $("closeCompose").addEventListener("click", closeCompose);
+    $("gradeBtn").addEventListener("click", gradeEmail);
+    $("refreshBtn").addEventListener("click", renderAll);
+    $("exportBtn").addEventListener("click", exportAttempts);
+
+    $("trainingToggle").addEventListener("click", () => {
+      $("trainerPanel").classList.toggle("hidden");
+      $("trainingToggle").classList.toggle("active");
+    });
+
+    renderAll();
+    setComposeForScenario();
+    renderComposeScenario();
+  </script>
+</body>
+</html>
